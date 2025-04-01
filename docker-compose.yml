@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  elasticsearch:
+    image: elasticsearch:8.9.0
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false  # Отключаем security для упрощения тестирования
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - elk_network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9200" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  logstash:
+    image: logstash:8.9.0
+    ports:
+      - "5044:5044"
+    volumes:
+      - ./docker/elk/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - ./docker/elk/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
+      - ./docker/elk/logstash/templates/spring-logs-template.json:/usr/share/logstash/templates/spring-logs-template.json
+    depends_on:
+      elasticsearch:
+        condition: service_healthy  # Ждем готовности Elasticsearch
+    networks:
+      - elk_network
+
+  kibana:
+    image: kibana:8.9.0
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200  # Явно указываем хост Elasticsearch
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - elk_network
+
+  filebeat:
+    image: elastic/filebeat:8.9.0
+    user: root  # Запуск от root
+    volumes:
+      - ./logs:/logs
+      - ./docker/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml
+    #    command: sh -c "chmod go-w /usr/share/filebeat/filebeat.yml && filebeat -e"
+    depends_on:
+      - logstash
+    networks:
+      - elk_network
+
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - elasticsearch
+      - logstash
+    networks:
+      - elk_network
+
+volumes:
+  elasticsearch_data:
+
+networks:
+  elk_network:
+    driver: bridge

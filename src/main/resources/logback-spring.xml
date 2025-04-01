@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Appender для записи в JSON-файл -->
+    <appender name="JSON" class="ch.qos.logback.core.FileAppender">
+        <file>./logs/spring-logs-app.log</file>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
+        <!--        <customFields>{"app":"my-spring-app","env":"${spring.profiles.active:-default}"}</customFields>-->
+        <customFields>{"service": "spring-elk-2"}</customFields>
+    </appender>
+
+    <!-- Appender для вывода в консоль -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{36}) - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Настройки для root логгера -->
+    <root level="INFO">
+        <appender-ref ref="JSON"/>
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <!-- Дополнительные настройки для конкретных пакетов -->
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="com.example" level="DEBUG"/>
+
+    <!-- Инициализация контекста -->
+    <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
+</configuration>

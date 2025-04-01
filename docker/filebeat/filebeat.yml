@@ -1,0 +1,16 @@
+filebeat.inputs:
+  - type: filestream
+    enabled: true
+    user: root  # Запуск от root
+    paths:
+      - /logs/*.log  # Путь внутри контейнера Filebeat
+    json: # Включаем парсинг JSON
+      keys_under_root: true   # Располагаем поля в корне документа
+      overwrite_keys: true    # Перезаписываем стандартные поля (например, @timestamp)
+      add_error_key: true     # Добавляем поле при ошибках парсинга
+    fields:
+      log_type: spring-app    # Метка для фильтрации в Logstash
+    fields_under_root: true   # Помещаем поля в корень документа
+
+output.logstash:
+  hosts: [ "logstash:5044" ]

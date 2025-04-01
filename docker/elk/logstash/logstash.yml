@@ -1,0 +1,2 @@
+# docker/elk/logstash/logstash.yml
+xpack.monitoring.enabled: false  # Отключаем мониторинг, если не нужен
